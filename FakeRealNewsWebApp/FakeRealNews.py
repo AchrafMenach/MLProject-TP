@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 import pickle
 import re
 import string
+import pkg_resources
+installed_packages = [pkg.key for pkg in pkg_resources.working_set]
 
 st.set_page_config(layout="wide")
 
