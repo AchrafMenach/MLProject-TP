@@ -14,21 +14,15 @@ st.set_page_config(layout="wide")
 # Titre de l'application
 st.subheader("Text Classification: Real or Fake")
 
-# Chargement des fichiers de modèles et du vectoriseur
-def load_model(file_path, model_name):
-    if os.path.exists(file_path):
-        with open(file_path, 'rb') as file:
-            return pickle.load(file)
-    else:
-        st.error(f"{model_name} file not found.")
-        return None
+with open('fake_news_model.pkl', 'rb') as lr_model_file:
+    lr_model = pickle.load(lr_model_file)
 
-lr_model = load_model('fake_news_model.pkl', 'Logistic Regression Model')
-rf_model = load_model('fake_news_model_rf.pkl', 'Random Forest Model')
-vectorizer = load_model('vectorizer.pkl', 'Vectorizer')
+with open('fake_news_model_rf.pkl', 'rb') as rf_model_file:
+    rf_model = pickle.load(rf_model_file)
 
+with open('vectorizer.pkl', 'rb') as vectorizer_file:
+    vectorizer = pickle.load(vectorizer_file)
 
-# Fonction de nettoyage de texte
 def wordclean(text):
     text = text.lower()
     text = re.sub(r'https?://\S+|www\.\S+', '', text)
