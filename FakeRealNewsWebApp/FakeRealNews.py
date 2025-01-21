@@ -6,7 +6,11 @@ import pickle
 import re
 import string
 import os
+import nltk
 from nltk.corpus import stopwords
+
+# Téléchargement des stopwords si nécessaire
+nltk.download('stopwords')
 
 # Configuration de la page
 st.set_page_config(layout="wide")
@@ -14,22 +18,31 @@ st.set_page_config(layout="wide")
 # Titre de l'application
 st.subheader("Text Classification: Real or Fake")
 
-with open('fake_news_model.pkl', 'rb') as lr_model_file:
-    lr_model = pickle.load(lr_model_file)
+# Chargement des fichiers de modèles et du vectoriseur
+def load_model(file_path, model_name):
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as file:
+            return pickle.load(file)
+    else:
+        st.error(f"{model_name} file not found.")
+        return None
 
-with open('fake_news_model_rf.pkl', 'rb') as rf_model_file:
-    rf_model = pickle.load(rf_model_file)
+lr_model = load_model('fake_news_model.pkl', 'Logistic Regression Model')
+rf_model = load_model('fake_news_model_rf.pkl', 'Random Forest Model')
+vectorizer = load_model('vectorizer.pkl', 'Vectorizer')
 
-with open('vectorizer.pkl', 'rb') as vectorizer_file:
-    vectorizer = pickle.load(vectorizer_file)
+# Vérification que les modèles et le vectoriseur sont bien chargés
+if not lr_model or not rf_model or not vectorizer:
+    st.stop()
 
+# Fonction de nettoyage de texte
 def wordclean(text):
     text = text.lower()
-    text = re.sub(r'https?://\S+|www\.\S+', '', text)
-    text = re.sub(r'[^\w\s]', '', text)
-    text = re.sub(r'\d+', '', text)
+    text = re.sub(r'https?://\S+|www\.\S+', '', text)  # Supprimer les URLs
+    text = re.sub(r'[^\w\s]', '', text)  # Supprimer la ponctuation
+    text = re.sub(r'\d+', '', text)  # Supprimer les chiffres
     words = text.split()
-    words = [word for word in words if word not in stopwords.words('english')]
+    words = [word for word in words if word not in stopwords.words('english')]  # Supprimer les stopwords
     return ' '.join(words)
 
 # Fonction d'affichage des jauges
@@ -95,19 +108,22 @@ with col1:
                 time.sleep(2)
 
             # Nettoyage du texte et vectorisation
-            cleaned_text = wordclean(user_text)
-            input_vector = vectorizer.transform([cleaned_text])
+            try:
+                cleaned_text = wordclean(user_text)
+                input_vector = vectorizer.transform([cleaned_text])
 
-            # Prédiction
-            if algorithm == "Logistic Regression":
-                prediction = lr_model.predict(input_vector)[0]
-            else:
-                prediction = rf_model.predict(input_vector)[0]
+                # Prédiction
+                if algorithm == "Logistic Regression":
+                    prediction = lr_model.predict(input_vector)[0]
+                else:
+                    prediction = rf_model.predict(input_vector)[0]
 
-            # Affichage du résultat
-            result = "Real" if prediction == 1 else "Fake"
-            st.subheader("Text Detection")
-            st.success(f"🎯 Your text is predicted as: **{result}**")
+                # Affichage du résultat
+                result = "Real" if prediction == 1 else "Fake"
+                st.subheader("Text Detection")
+                st.success(f"🎯 Your text is predicted as: **{result}**")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
 
 # Affichage des métriques
 with col2:
